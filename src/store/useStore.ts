@@ -74,6 +74,8 @@ interface State {
   login: (usuario: string) => void
   logout: () => void
   setArmazem: (id: string) => void
+  /** Substitui a lista de armazéns (ex.: dados reais do WMS quando conectado). */
+  setArmazens: (list: Armazem[]) => void
 
   // CRUD genérico
   upsert: <T extends WithId>(col: CollectionKey, item: T) => void
@@ -115,6 +117,12 @@ export const useStore = create<State>((set, get) => ({
   login: (usuario) => set({ autenticado: true, usuario }),
   logout: () => set({ autenticado: false, usuario: '' }),
   setArmazem: (id) => set({ armazemId: id }),
+  setArmazens: (list) =>
+    set((s) => ({
+      armazens: list,
+      // se o armazém atual não existe na lista nova, seleciona o primeiro real
+      armazemId: list.some((a) => a.id === s.armazemId) ? s.armazemId : (list[0]?.id ?? s.armazemId),
+    })),
 
   upsert: (col, item) =>
     set((s) => {

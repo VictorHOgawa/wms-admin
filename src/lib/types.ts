@@ -10,7 +10,7 @@
 import type {
   DemoChecklistQuestion,
   DemoChecklistTemplate,
-} from '../../../wms-shared-demo'
+} from '../shared-demo'
 
 export type Curva = 'A' | 'B' | 'C'
 

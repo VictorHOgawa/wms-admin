@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import {
   Search,
@@ -13,6 +13,40 @@ import { Brand } from './Brand'
 import { NAV } from './nav'
 import { useStore } from '../store/useStore'
 import { cn } from '../lib/utils'
+import { isConnected, wmsApi } from '../lib/wmsApi'
+import type { Armazem, ModoArmazem, TipoArmazem } from '../lib/types'
+
+/** Popula o store com os armazéns REAIS do WMS quando há conexão (senão fica no demo). */
+function useArmazensReais() {
+  const setArmazens = useStore((s) => s.setArmazens)
+  useEffect(() => {
+    if (!isConnected()) return
+    let vivo = true
+    wmsApi
+      .warehouses()
+      .then((whs) => {
+        if (!vivo || whs.length === 0) return
+        const reais: Armazem[] = whs.map((w) => ({
+          id: w.id,
+          codigo: w.code,
+          nome: w.name,
+          tipo: w.tipo as TipoArmazem,
+          cidade: w.city ?? '',
+          uf: w.uf ?? '',
+          modo: w.mode as ModoArmazem,
+          ativo: w.active,
+          businessUnitId: w.businessUnitId,
+        }))
+        setArmazens(reais)
+      })
+      .catch(() => {
+        /* sem conexão real → segue no demo */
+      })
+    return () => {
+      vivo = false
+    }
+  }, [setArmazens])
+}
 
 function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const groups = [...new Set(NAV.map((i) => i.group))]
@@ -168,6 +202,7 @@ function Topbar({ onMenu }: { onMenu: () => void }) {
 
 export default function Shell() {
   const [mobileOpen, setMobileOpen] = useState(false)
+  useArmazensReais()
   return (
     <div className="flex h-screen overflow-hidden">
       {/* desktop sidebar */}

@@ -23,11 +23,11 @@ import {
   DEMO_USERS,
   DEMO_WAREHOUSES,
   DEMO_CHECKLIST_TEMPLATES,
-} from '../../../wms-shared-demo'
+} from '../shared-demo'
 import {
   DEMO_ADMIN_BUSINESS_ADDRESS_BLUEPRINT,
   DEMO_ADMIN_BUSINESS_DOCAS,
-} from '../../../wms-shared-demo/locations.ts'
+} from '../shared-demo/locations.ts'
 
 /* ------------------------------------------------------------------ *
  * Dados-semente (mock). Sem API: tudo vive em memória no store.

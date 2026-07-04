@@ -30,7 +30,7 @@ import { Badge, Modal, PageHeader, Progress, Tab, Tabs } from '../components/ui'
 import { Field, FormGrid, FormSection, SelectField } from '../components/form'
 import { useStore } from '../store/useStore'
 import { cn, num } from '../lib/utils'
-import { DEMO_OWNERS, DEMO_SKUS } from '../../../wms-shared-demo'
+import { DEMO_OWNERS, DEMO_SKUS } from '../shared-demo'
 
 type Formato = 'csv' | 'json' | 'xlsx'
 type Aba = 'lotes' | 'revisao' | 'mapeamento' | 'validacoes'
