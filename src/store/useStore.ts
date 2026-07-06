@@ -93,9 +93,20 @@ interface State {
 
 let toastSeq = 1
 
+// Sessão de UI persistida: o refresh não pode deslogar o admin (achado da
+// validação de 03/07 — "faço login, atualizo a página, volto para login").
+const AUTH_KEY = 'wms-admin.ui.auth'
+const savedAuth: { usuario: string } | null = (() => {
+  try {
+    return JSON.parse(localStorage.getItem(AUTH_KEY) ?? 'null')
+  } catch {
+    return null
+  }
+})()
+
 export const useStore = create<State>((set, get) => ({
-  autenticado: false,
-  usuario: '',
+  autenticado: !!savedAuth,
+  usuario: savedAuth?.usuario ?? '',
   armazemId: 'cd-sp',
 
   armazens: structuredClone(ARMAZENS),
@@ -114,8 +125,18 @@ export const useStore = create<State>((set, get) => ({
 
   toasts: [],
 
-  login: (usuario) => set({ autenticado: true, usuario }),
-  logout: () => set({ autenticado: false, usuario: '' }),
+  login: (usuario) => {
+    try {
+      localStorage.setItem(AUTH_KEY, JSON.stringify({ usuario }))
+    } catch { /* storage indisponível: segue em memória */ }
+    set({ autenticado: true, usuario })
+  },
+  logout: () => {
+    try {
+      localStorage.removeItem(AUTH_KEY)
+    } catch { /* ignore */ }
+    set({ autenticado: false, usuario: '' })
+  },
   setArmazem: (id) => set({ armazemId: id }),
   setArmazens: (list) =>
     set((s) => ({
