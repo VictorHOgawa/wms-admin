@@ -31,7 +31,7 @@ export interface NavItem {
  * grupo "Demonstração".
  */
 export const NAV: NavItem[] = [
-  { to: '/', label: 'Painel', icon: LayoutDashboard, group: 'Visão geral', badge: 'demo' },
+  { to: '/', label: 'Painel', icon: LayoutDashboard, group: 'Visão geral' },
 
   // A geografia do armazém (tudo REAL — é daqui que o coletor bipa endereços).
   { to: '/armazens', label: 'Armazéns & CDs', icon: Warehouse, group: 'Estrutura física' },

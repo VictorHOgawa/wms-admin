@@ -15,9 +15,14 @@ export default function Login() {
     e.preventDefault()
     setLoading(true)
     setAviso(null)
+    // Conexão real é OBRIGATÓRIA (decisão 10/07: sem modo demo silencioso).
     const res = await wmsConnect(usuario.trim(), senha)
-    if (!res.ok) setAviso(res.message ?? 'Modo demo (sem backend).')
-    login(usuario.trim() || 'Administrador')
+    if (!res.ok) {
+      setAviso(res.message ?? 'Não foi possível conectar ao WMS. Verifique credenciais e conexão.')
+      setLoading(false)
+      return
+    }
+    login(usuario.trim())
   }
 
   return (
@@ -80,7 +85,7 @@ export default function Login() {
             {aviso && <p className="mt-3 text-center text-xs text-warn">{aviso}</p>}
           </div>
           <p className="text-center text-xs text-ink-muted mt-4">
-            Conecta ao WMS real se as credenciais do Hub forem válidas · senão, modo demo
+            Entre com as credenciais do Hub — o painel trabalha somente com dados reais
           </p>
         </div>
       </div>

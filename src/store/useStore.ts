@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { disconnect as wmsDisconnect, isConnected as wmsIsConnected } from '../lib/wmsApi'
 import {
   ARMAZENS,
   CHECKLISTS,
@@ -105,7 +106,9 @@ const savedAuth: { usuario: string } | null = (() => {
 })()
 
 export const useStore = create<State>((set, get) => ({
-  autenticado: !!savedAuth,
+  // Sessão de UI só vale acompanhada da sessão real do spoke (decisão 10/07:
+  // sem modo demo — "logado vendo mock" deixou de existir).
+  autenticado: !!savedAuth && wmsIsConnected(),
   usuario: savedAuth?.usuario ?? '',
   armazemId: 'cd-sp',
 
@@ -135,6 +138,8 @@ export const useStore = create<State>((set, get) => ({
     try {
       localStorage.removeItem(AUTH_KEY)
     } catch { /* ignore */ }
+    // Deslogar desloga de verdade: derruba também a sessão do spoke.
+    wmsDisconnect()
     set({ autenticado: false, usuario: '' })
   },
   setArmazem: (id) => set({ armazemId: id }),
