@@ -164,6 +164,8 @@ export const DEFINICOES_PARAMETROS: DefinicaoParametro[] = [
     { value: 'zona', label: 'Por zona' },
     { value: 'cluster', label: 'Cluster' },
   ], descricao: 'Como o motor de separação agrupa o trabalho.', modoSimples: 'Discreto — uma lista por pedido.', modoCompleto: 'Onda + batch + zona + cluster.' },
+  // Cross-dock & Free time
+  { chave: 'free_time_horas', grupo: 'Cross-dock & Free time', label: 'Free time do piso', tipo: 'number', default: '24', unidade: 'h', descricao: 'Horas que a carga pode ficar no piso antes de estourar. O escopo CLIENTE representa o contrato (vence o CD e o global); a carga com free time gravado vence tudo.', modoSimples: '24 h fixas para todo mundo.', modoCompleto: 'Padrão global + override por CD e por cliente (contrato).' },
   // Inventário
   { chave: 'alcada_ajuste_un', grupo: 'Inventário', label: 'Alçada de ajuste', tipo: 'number', default: '50', unidade: 'un', descricao: 'Quantidade máxima de ajuste sem aprovação de supervisor.', modoSimples: 'Limite baixo, dono aprova tudo.', modoCompleto: 'Alçada multinível por perfil.' },
   { chave: 'tolerancia_divergencia_pct', grupo: 'Inventário', label: 'Tolerância de divergência', tipo: 'number', default: '2', unidade: '%', descricao: 'Acima deste percentual, a contagem dispara recontagem.', modoSimples: 'Tolerância folgada.', modoCompleto: 'Tolerância apertada (acuracidade > 99%).' },
