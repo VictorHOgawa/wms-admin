@@ -7,7 +7,7 @@ import { Badge, EmptyState, Modal, PageHeader } from '../components/ui'
 import { Field, FormGrid, FormSection, SelectField, SettingRow } from '../components/form'
 import { cn, maskCest, maskEan, maskNcm, num, uid } from '../lib/utils'
 import type { Curva, SKU } from '../lib/types'
-import { isConnected, wmsApi, type WmsSkuDTO } from '../lib/wmsApi'
+import { isConnected, wmsApi, type WmsAfericaoDTO, type WmsSkuDTO } from '../lib/wmsApi'
 
 /** DTO real (adapta-api) → SKU do painel. */
 function mapReal(d: WmsSkuDTO): SKU {
@@ -31,6 +31,7 @@ function mapReal(d: WmsSkuDTO): SKU {
     alturaMaxEmpilhamento: d.alturaMaxEmpilhamento,
     maxCaixasPorPallet: d.maxCaixasPorPallet,
     pendenteParametrizacao: d.pendenteParametrizacao,
+    exigeMedidaTodaVez: d.exigeMedidaTodaVez,
     controleLote: d.controlLote,
     controleValidade: d.controlValidade,
     controleSerie: d.controlSerie,
@@ -67,6 +68,7 @@ function toDto(s: SKU): Record<string, unknown> {
     lastro: s.lastro ?? null,
     alturaMaxEmpilhamento: s.alturaMaxEmpilhamento ?? null,
     pendenteParametrizacao: s.pendenteParametrizacao ?? false,
+    exigeMedidaTodaVez: s.exigeMedidaTodaVez ?? false,
     ncm: s.ncm,
     cest: s.cest,
     origem: s.origem,
@@ -277,6 +279,7 @@ export default function Produtos() {
                         {p.ativo ? 'Ativo' : 'Inativo'}
                       </Badge>
                       {p.pendenteParametrizacao && <Badge tone="warn" dot>Parametrização pendente</Badge>}
+                      {p.exigeMedidaTodaVez && <Badge tone="info" dot>Mede toda chegada</Badge>}
                     </div>
                   </td>
                   <td className="td">
@@ -328,6 +331,93 @@ export default function Produtos() {
           onSave={salvar}
         />
       )}
+    </div>
+  )
+}
+
+/**
+ * Amostras de aferição do recebimento (conferência dimensional): o que o chão
+ * mediu nas últimas chegadas — apoia a decisão da alçada (dimensão fixa ×
+ * medir toda vez) e permite aplicar a última medição ao cadastro-mestre.
+ */
+function AmostrasAfericao({
+  skuId,
+  onAplicar,
+}: {
+  skuId: string
+  onAplicar: (a: WmsAfericaoDTO) => void
+}) {
+  const [amostras, setAmostras] = useState<WmsAfericaoDTO[] | null>(null)
+
+  useEffect(() => {
+    let vivo = true
+    ;(async () => {
+      try {
+        const rows = await wmsApi.afericoes({ skuId })
+        if (vivo) setAmostras(rows)
+      } catch {
+        if (vivo) setAmostras([])
+      }
+    })()
+    return () => {
+      vivo = false
+    }
+  }, [skuId])
+
+  if (amostras === null) {
+    return <p className="mt-2 text-xs text-ink-muted">Carregando amostras de medição…</p>
+  }
+  if (amostras.length === 0) {
+    return (
+      <p className="mt-2 text-xs text-ink-muted">
+        Nenhuma medição registrada ainda — as amostras aparecem aqui a cada recebimento deste SKU.
+      </p>
+    )
+  }
+  const fmt = (v: number | null, suf: string) => (v == null ? '—' : `${v}${suf}`)
+  return (
+    <div className="mt-2 rounded-xl border border-line overflow-hidden">
+      <div className="px-3 py-2 text-xs font-medium text-ink-soft bg-surface-sub">
+        Amostras medidas no recebimento ({amostras.length})
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full">
+          <thead>
+            <tr>
+              <th className="th">Quando</th>
+              <th className="th">Qtd</th>
+              <th className="th">Peso unit.</th>
+              <th className="th">A×L×P (cm)</th>
+              <th className="th">Cubagem unit.</th>
+              <th className="th text-right" />
+            </tr>
+          </thead>
+          <tbody>
+            {amostras.slice(0, 8).map((a) => (
+              <tr key={a.id} className="row-hover">
+                <td className="td text-xs">{new Date(a.medidoEm).toLocaleString('pt-BR')}</td>
+                <td className="td text-xs">{a.quantidadeAferida ?? '—'}</td>
+                <td className="td text-xs">{fmt(a.pesoUnitKg, ' kg')}</td>
+                <td className="td text-xs mono">
+                  {a.alturaCm && a.larguraCm && a.profundidadeCm
+                    ? `${a.alturaCm}×${a.larguraCm}×${a.profundidadeCm}`
+                    : '—'}
+                </td>
+                <td className="td text-xs">{fmt(a.cubagemUnitM3, ' m³')}</td>
+                <td className="td text-right">
+                  <button
+                    className="btn-outline text-xs px-2 py-1"
+                    onClick={() => onAplicar(a)}
+                    title="Preenche peso/dimensões da unidade com esta amostra (salvar aplica ao cadastro)"
+                  >
+                    Aplicar ao cadastro
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   )
 }
@@ -437,6 +527,28 @@ function ProdutoModal({
             <Field label="CEST" value={f.cest} onChange={(v) => set('cest', maskCest(v))} mono placeholder="21.106.00" />
             <SelectField label="Origem (ICMS)" value={String(f.origem)} onChange={(v) => set('origem', Number(v))} options={Object.entries(ORIGEM_LABEL).map(([k, l]) => ({ value: k, label: l }))} />
           </FormGrid>
+        </FormSection>
+
+        <FormSection title="Política dimensional (conferência no recebimento)">
+          <div className="rounded-xl border border-line px-4">
+            <SettingRow
+              title="Exige medida toda chegada"
+              desc="Dimensão variável (chapa, mangueira, bobina…): o coletor exige peso/medidas em TODO recebimento deste SKU. Desligado = usa o cadastro-mestre."
+              on={!!f.exigeMedidaTodaVez}
+              onToggle={() => set('exigeMedidaTodaVez', !f.exigeMedidaTodaVez)}
+            />
+          </div>
+          {conectado && !novo && (f.pendenteParametrizacao || f.exigeMedidaTodaVez) && (
+            <AmostrasAfericao
+              skuId={sku.id}
+              onAplicar={(a) => {
+                if (a.pesoUnitKg) set('peso', a.pesoUnitKg)
+                if (a.alturaCm) set('altura', a.alturaCm)
+                if (a.larguraCm) set('largura', a.larguraCm)
+                if (a.profundidadeCm) set('profundidade', a.profundidadeCm)
+              }}
+            />
+          )}
         </FormSection>
 
         {sku.pendenteParametrizacao && (

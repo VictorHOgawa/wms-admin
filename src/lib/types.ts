@@ -70,6 +70,8 @@ export interface SKU {
   maxCaixasPorPallet?: number | null // derivado: lastro × altura (read-only)
   /** Pré-cadastro automático da NF: pendente até completar a parametrização física. */
   pendenteParametrizacao?: boolean
+  /** Política dimensional (alçada): dimensão variável — exige medição em TODA chegada. */
+  exigeMedidaTodaVez?: boolean
   // controles de rastreio (ligam comportamento na operação)
   controleLote: boolean
   controleValidade: boolean

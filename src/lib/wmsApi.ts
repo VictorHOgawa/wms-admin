@@ -184,6 +184,8 @@ export interface WmsSkuDTO {
   alturaMaxEmpilhamento: number | null
   maxCaixasPorPallet: number | null
   pendenteParametrizacao: boolean
+  /** Política dimensional (alçada): SKU de dimensão variável — mede TODA chegada. */
+  exigeMedidaTodaVez: boolean
   ncm: string | null
   cest: string | null
   origem: number | null
@@ -250,6 +252,28 @@ export interface WmsGeneralidadeDTO {
   active: boolean
 }
 
+/** Aferição dimensional (amostra medida no recebimento) — conferência dimensional. */
+export interface WmsAfericaoDTO {
+  id: string
+  recebimentoId: string
+  skuId: string
+  skuCode: string
+  ownerId: string
+  fiscalDocumentId: string | null
+  quantidadeAferida: number | null
+  pesoUnitKg: number | null
+  alturaCm: number | null
+  larguraCm: number | null
+  profundidadeCm: number | null
+  cubagemUnitM3: number | null
+  cubagemTotalM3: number | null
+  origem: string
+  medidoPorUserId: string | null
+  medidoEm: string
+  aplicadaAoCadastro: boolean
+  observacao: string | null
+}
+
 export const wmsApi = {
   warehouses: () => authed<WmsWarehouseDTO[]>('GET', '/wms/warehouses'),
   businessUnits: () => authed<BusinessUnitLiteDTO[]>('GET', '/business-units?onlyCD=true'),
@@ -265,6 +289,13 @@ export const wmsApi = {
   createSku: (dto: Record<string, unknown>) => authed<WmsSkuDTO>('POST', '/wms/skus', dto),
   updateSku: (id: string, dto: Record<string, unknown>) =>
     authed<WmsSkuDTO>('PATCH', `/wms/skus/${id}`, dto),
+  afericoes: (filtro?: { skuId?: string; recebimentoId?: string }) => {
+    const params = new URLSearchParams()
+    if (filtro?.skuId) params.set('skuId', filtro.skuId)
+    if (filtro?.recebimentoId) params.set('recebimentoId', filtro.recebimentoId)
+    const qs = params.toString()
+    return authed<WmsAfericaoDTO[]>('GET', `/wms/afericoes${qs ? `?${qs}` : ''}`)
+  },
   supplies: () => authed<WmsSupplyDTO[]>('GET', '/wms/supplies'),
   createSupply: (dto: Record<string, unknown>) => authed<WmsSupplyDTO>('POST', '/wms/supplies', dto),
   updateSupply: (id: string, dto: Record<string, unknown>) =>
